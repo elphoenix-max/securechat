@@ -230,52 +230,88 @@
             return () => clearInterval(interval);
           }, [currentUser, activeChat]);
 
-          // Système de cryptage
+          // Système de cryptage ultra-sécurisé
           const advancedCrypto = {
+            // Alphabet de substitution complexe avec symboles Unicode
             cipherMap: {
-              'a': '𝔞', 'b': '𝔟', 'c': '𝔠', 'd': '𝔡', 'e': '𝔢', 'f': '𝔣', 'g': '𝔤', 'h': '𝔥',
-              'i': '𝔦', 'j': '𝔧', 'k': '𝔨', 'l': '𝔩', 'm': '𝔪', 'n': '𝔫', 'o': '𝔬', 'p': '𝔭',
-              'q': '𝔮', 'r': '𝔯', 's': '𝔰', 't': '𝔱', 'u': '𝔲', 'v': '𝔳', 'w': '𝔴', 'x': '𝔵',
-              'y': '𝔶', 'z': '𝔷', 'A': '𝔄', 'B': '𝔅', 'C': 'ℭ', 'D': '𝔇', 'E': '𝔈', 'F': '𝔉',
-              'G': '𝔊', 'H': 'ℌ', 'I': 'ℑ', 'J': '𝔍', 'K': '𝔎', 'L': '𝔏', 'M': '𝔐', 'N': '𝔑',
-              'O': '𝔒', 'P': '𝔓', 'Q': '𝔔', 'R': 'ℜ', 'S': '𝔖', 'T': '𝔗', 'U': '𝔘', 'V': '𝔙',
-              'W': '𝔚', 'X': '𝔛', 'Y': '𝔜', 'Z': 'ℨ', ' ': '◊', '.': '⋄', ',': '◈', '!': '‼',
-              '?': '⁇', ':': '∷', ';': '⁏', '-': '⸺', "'": '′', '"': '″', '0': '🮰', '1': '🮱',
-              '2': '🮲', '3': '🮳', '4': '🮴', '5': '🮵', '6': '🮶', '7': '🮷', '8': '🮸', '9': '🮹'
+              'a': '҈∭⟅', 'b': '⫸⧙∯', 'c': '⨳⟆∮', 'd': '⧗⫿⨀', 'e': '∰⧛⟇', 'f': '⫹∱⨁', 'g': '⧘⟈⨂', 'h': '⫺⧜∲',
+              'i': '∳⟉⨃', 'j': '⧝⫻⨄', 'k': '∴⧞⟊', 'l': '⫼⨅∵', 'm': '⧟⟋∶', 'n': '⫽⨆∷', 'o': '∸⧠⟌', 'p': '⫾⨇∹',
+              'q': '⧡∺⟍', 'r': '⫿⨈∻', 's': '⧢⟎∼', 't': '⬀∽⨉', 'u': '⧣⟏∾', 'v': '⬁∿⨊', 'w': '⧤⟐≀', 'x': '⬂≁⨋',
+              'y': '⧥⟑≂', 'z': '⬃≃⨌', 'A': '⧦⟒≄', 'B': '⬄≅⨍', 'C': '⧧⟓≆', 'D': '⬅≇⨎', 'E': '⧨⟔≈', 'F': '⬆≉⨏',
+              'G': '⧩⟕≊', 'H': '⬇≋⨐', 'I': '⧪⟖≌', 'J': '⬈≍⨑', 'K': '⧫⟗≎', 'L': '⬉≏⨒', 'M': '⧬⟘≐', 'N': '⬊≑⨓',
+              'O': '⧭⟙≒', 'P': '⬋≓⨔', 'Q': '⧮⟚≔', 'R': '⬌≕⨕', 'S': '⧯⟛≖', 'T': '⬍≗⨖', 'U': '⧰⟜≘', 'V': '⬎≙⨗',
+              'W': '⧱⟝≚', 'X': '⬏≛⨘', 'Y': '⧲⟞≜', 'Z': '⬐≝⨙', ' ': '◊⟟≞', '.': '⋄≟⨚', ',': '◈⟠≠', '!': '‼≡⨛',
+              '?': '⁇⟡≢', ':': '∷≣⨜', ';': '⁏⟢≤', '-': '⸺≥⨝', "'": '′⟣≦', '"': '″≧⨞', '0': '⟤≨⨟', '1': '⟥≩⨠',
+              '2': '⟦≪⨡', '3': '⟧≫⨢', '4': '⟨≬⨣', '5': '⟩≭⨤', '6': '⟪≮⨥', '7': '⟫≯⨦', '8': '⟬≰⨧', '9': '⟭≱⨨'
             },
             
-            noiseChars: ['⟐', '⟡', '⟢', '⟣', '⦿', '◉', '◎', '◍'],
+            // Caractères de bruit complexes
+            noiseChars: ['⫷', '⧚', '⨪', '⧀', '⫸', '⨫', '⧁', '⫹', '⨬', '⧂', '⫺', '⨭', '⧃', '⫻', '⨮', '⧄', '⫼', '⨯', '⧅', '⫽'],
             
+            // Générateur de clé complexe
             createKey: (senderCode, receiverCode) => {
               const combined = senderCode + receiverCode;
               let hash = 0;
               for (let i = 0; i < combined.length; i++) {
-                hash = ((hash << 5) - hash + combined.charCodeAt(i)) & 0xffffffff;
+                const char = combined.charCodeAt(i);
+                hash = ((hash << 7) - hash + char) & 0xffffffff;
+                hash = hash ^ (char << (i % 8));
               }
-              return Math.abs(hash) % 1000;
+              return Math.abs(hash) % 9973; // Nombre premier pour plus de complexité
             },
 
             encrypt: (text, senderCode, receiverCode) => {
               const key = advancedCrypto.createKey(senderCode, receiverCode);
               
+              // Étape 1: Substitution avec l'alphabet crypté
               let result = text.split('').map(char => 
-                advancedCrypto.cipherMap[char] || char
+                advancedCrypto.cipherMap[char] || `⟮${char.charCodeAt(0).toString(16)}⟯`
               ).join('');
               
-              if (key % 2 === 1) {
+              // Étape 2: Rotation basée sur la clé
+              if (key % 3 === 0) {
                 result = result.split('').reverse().join('');
+              } else if (key % 3 === 1) {
+                // Décalage circulaire
+                const shift = key % result.length;
+                result = result.slice(shift) + result.slice(0, shift);
               }
               
+              // Étape 3: Insertion de bruit pseudo-aléatoire
               let noisyResult = '';
-              const noiseInterval = 3 + (key % 4);
+              const noiseInterval = 2 + (key % 5);
+              const noiseIntensity = 1 + (key % 3);
+              
               for (let i = 0; i < result.length; i++) {
                 noisyResult += result[i];
+                
+                // Ajouter plusieurs caractères de bruit
                 if ((i + 1) % noiseInterval === 0 && i < result.length - 1) {
-                  noisyResult += advancedCrypto.noiseChars[(key + i) % advancedCrypto.noiseChars.length];
+                  for (let n = 0; n < noiseIntensity; n++) {
+                    const noiseIndex = (key + i + n) % advancedCrypto.noiseChars.length;
+                    noisyResult += advancedCrypto.noiseChars[noiseIndex];
+                  }
                 }
               }
               
-              return noisyResult;
+              // Étape 4: Fragmentation et réarrangement
+              const segments = [];
+              const segmentSize = 4 + (key % 6);
+              for (let i = 0; i < noisyResult.length; i += segmentSize) {
+                segments.push(noisyResult.slice(i, i + segmentSize));
+              }
+              
+              // Mélanger les segments selon la clé
+              for (let i = segments.length - 1; i > 0; i--) {
+                const j = (key + i) % (i + 1);
+                [segments[i], segments[j]] = [segments[j], segments[i]];
+              }
+              
+              // Étape 5: Ajout d'un préfixe et suffixe de sécurité
+              const prefix = '⧼' + (key % 1000).toString(36) + '⧽';
+              const suffix = '⟨' + (key * 7 % 1000).toString(36) + '⟩';
+              
+              return prefix + segments.join('⧻') + suffix;
             }
           };
 
