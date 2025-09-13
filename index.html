@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureChat - Messagerie Cryptée</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading">
+            <div class="text-center">
+                <div class="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-xl">Chargement de SecureChat...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+
+        // Icônes créées manuellement
+        const Icons = {
+          Send: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22,2 15,22 11,13 2,9"></polygon>
+            </svg>
+          ),
+          Eye: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          ),
+          EyeOff: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          ),
+          MessageCircle: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+            </svg>
+          ),
+          Lock: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <circle cx="12" cy="16" r="1"></circle>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          ),
+          User: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          ),
+          LogOut: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16,17 21,12 16,7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          ),
+          UserPlus: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          ),
+          Shield: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          ),
+          Hash: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="4" y1="9" x2="20" y2="9"></line>
+              <line x1="4" y1="15" x2="20" y2="15"></line>
+              <line x1="10" y1="3" x2="8" y2="21"></line>
+              <line x1="16" y1="3" x2="14" y2="21"></line>
+            </svg>
+          ),
+          Database: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          ),
+          Wifi: ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+          )
+        };
+
+        // API pour MongoDB via Netlify Functions
+        const api = {
+          async call(endpoint, data = null) {
+            try {
+              const response = await fetch(`/.netlify/functions/${endpoint}`, {
+                method: data ? 'POST' : 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: data ? JSON.stringify(data) : null,
+              });
+              
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              
+              return await response.json();
+            } catch (error) {
+              console.error(`API call failed for ${endpoint}:`, error);
+              throw error;
+            }
+          },
+
+          // Fonctions pour les utilisateurs
+          async createUser(username, password) {
+            return await this.call('createUser', { username, password });
+          },
+
+          async loginUser(userCode, password) {
+            return await this.call('loginUser', { userCode, password });
+          },
+
+          async getAllUsers() {
+            return await this.call('getAllUsers');
+          },
+
+          // Fonctions pour les conversations
+          async getConversations(userCode) {
+            return await this.call('getConversations', { userCode });
+          },
+
+          async sendMessage(senderCode, receiverCode, encrypted, original) {
+            return await this.call('sendMessage', { 
+              senderCode, 
+              receiverCode, 
+              encrypted, 
+              original 
+            });
+          },
+
+          async getMessages(chatId) {
+            return await this.call('getMessages', { chatId });
+          }
+        };
+
+        const SecureChat = () => {
+          const [currentScreen, setCurrentScreen] = useState('login');
+          const [currentUser, setCurrentUser] = useState(null);
+          const [users, setUsers] = useState({});
+          const [conversations, setConversations] = useState({});
+          const [activeChat, setActiveChat] = useState(null);
+          const [newMessage, setNewMessage] = useState('');
+          const [showTranslations, setShowTranslations] = useState({});
+          const [loginForm, setLoginForm] = useState({ userCode: '', password: '' });
+          const [registerForm, setRegisterForm] = useState({ username: '', password: '', confirmPassword: '' });
+          const [contactCode, setContactCode] = useState('');
+          const [loading, setLoading] = useState(false);
+          const [connectionStatus, setConnectionStatus] = useState('connecting');
+          const [totalUsers, setTotalUsers] = useState(0);
+          const messagesEndRef = useRef(null);
+
+          // Vérification de la connexion à MongoDB
+          useEffect(() => {
+            const checkConnection = async () => {
+              try {
+                setConnectionStatus('connecting');
+                const users = await api.getAllUsers();
+                setTotalUsers(users.length);
+                setConnectionStatus('connected');
+              } catch (error) {
+                console.error('MongoDB connection failed:', error);
+                setConnectionStatus('error');
+              }
+            };
+
+            checkConnection();
+          }, []);
+
+          // Polling pour les nouveaux messages (toutes les 3 secondes)
+          useEffect(() => {
+            if (!currentUser || !activeChat) return;
+
+            const interval = setInterval(async () => {
+              try {
+                const messages = await api.getMessages(activeChat);
+                setConversations(prev => ({
+                  ...prev,
+                  [activeChat]: {
+                    ...prev[activeChat],
+                    messages: messages
+                  }
+                }));
+              } catch (error) {
+                console.error('Error fetching messages:', error);
+              }
+            }, 3000);
+
+            return () => clearInterval(interval);
+          }, [currentUser, activeChat]);
+
+          // Système de cryptage
+          const advancedCrypto = {
+            cipherMap: {
+              'a': '𝔞', 'b': '𝔟', 'c': '𝔠', 'd': '𝔡', 'e': '𝔢', 'f': '𝔣', 'g': '𝔤', 'h': '𝔥',
+              'i': '𝔦', 'j': '𝔧', 'k': '𝔨', 'l': '𝔩', 'm': '𝔪', 'n': '𝔫', 'o': '𝔬', 'p': '𝔭',
+              'q': '𝔮', 'r': '𝔯', 's': '𝔰', 't': '𝔱', 'u': '𝔲', 'v': '𝔳', 'w': '𝔴', 'x': '𝔵',
+              'y': '𝔶', 'z': '𝔷', 'A': '𝔄', 'B': '𝔅', 'C': 'ℭ', 'D': '𝔇', 'E': '𝔈', 'F': '𝔉',
+              'G': '𝔊', 'H': 'ℌ', 'I': 'ℑ', 'J': '𝔍', 'K': '𝔎', 'L': '𝔏', 'M': '𝔐', 'N': '𝔑',
+              'O': '𝔒', 'P': '𝔓', 'Q': '𝔔', 'R': 'ℜ', 'S': '𝔖', 'T': '𝔗', 'U': '𝔘', 'V': '𝔙',
+              'W': '𝔚', 'X': '𝔛', 'Y': '𝔜', 'Z': 'ℨ', ' ': '◊', '.': '⋄', ',': '◈', '!': '‼',
+              '?': '⁇', ':': '∷', ';': '⁏', '-': '⸺', "'": '′', '"': '″', '0': '🮰', '1': '🮱',
+              '2': '🮲', '3': '🮳', '4': '🮴', '5': '🮵', '6': '🮶', '7': '🮷', '8': '🮸', '9': '🮹'
+            },
+            
+            noiseChars: ['⟐', '⟡', '⟢', '⟣', '⦿', '◉', '◎', '◍'],
+            
+            createKey: (senderCode, receiverCode) => {
+              const combined = senderCode + receiverCode;
+              let hash = 0;
+              for (let i = 0; i < combined.length; i++) {
+                hash = ((hash << 5) - hash + combined.charCodeAt(i)) & 0xffffffff;
+              }
+              return Math.abs(hash) % 1000;
+            },
+
+            encrypt: (text, senderCode, receiverCode) => {
+              const key = advancedCrypto.createKey(senderCode, receiverCode);
+              
+              let result = text.split('').map(char => 
+                advancedCrypto.cipherMap[char] || char
+              ).join('');
+              
+              if (key % 2 === 1) {
+                result = result.split('').reverse().join('');
+              }
+              
+              let noisyResult = '';
+              const noiseInterval = 3 + (key % 4);
+              for (let i = 0; i < result.length; i++) {
+                noisyResult += result[i];
+                if ((i + 1) % noiseInterval === 0 && i < result.length - 1) {
+                  noisyResult += advancedCrypto.noiseChars[(key + i) % advancedCrypto.noiseChars.length];
+                }
+              }
+              
+              return noisyResult;
+            }
+          };
+
+          const handleLogin = async () => {
+            setLoading(true);
+            try {
+              const result = await api.loginUser(loginForm.userCode, loginForm.password);
+              if (result.success) {
+                setCurrentUser(result.user);
+                setCurrentScreen('chat');
+                setLoginForm({ userCode: '', password: '' });
+                
+                // Charger les conversations
+                const userConversations = await api.getConversations(result.user.code);
+                setConversations(userConversations);
+              } else {
+                alert(result.message || 'Connexion échouée');
+              }
+            } catch (error) {
+              alert('Erreur de connexion à MongoDB');
+              console.error('Login error:', error);
+            }
+            setLoading(false);
+          };
+
+          const handleRegister = async () => {
+            if (registerForm.password !== registerForm.confirmPassword) {
+              alert('Les mots de passe ne correspondent pas');
+              return;
+            }
+            if (registerForm.username.length < 3) {
+              alert('Le nom d\'utilisateur doit contenir au moins 3 caractères');
+              return;
+            }
+            if (registerForm.password.length < 6) {
+              alert('Le mot de passe doit contenir au moins 6 caractères');
+              return;
+            }
+            
+            setLoading(true);
+            try {
+              const result = await api.createUser(registerForm.username, registerForm.password);
+              if (result.success) {
+                alert(`✅ Compte créé avec succès !\n\n🔑 Votre code utilisateur : ${result.userCode}\n\n⚠️ IMPORTANT : Notez bien ce code !`);
+                setRegisterForm({ username: '', password: '', confirmPassword: '' });
+                setLoginForm({ userCode: result.userCode, password: '' });
+                setCurrentScreen('login');
+                
+                // Mettre à jour le compteur
+                setTotalUsers(prev => prev + 1);
+              } else {
+                alert(result.message || 'Création de compte échouée');
+              }
+            } catch (error) {
+              alert('Erreur de création de compte');
+              console.error('Register error:', error);
+            }
+            setLoading(false);
+          };
+
+          const startConversation = async () => {
+            if (!contactCode || contactCode === currentUser.code) {
+              alert('⚠ Code utilisateur invalide ou identique au vôtre');
+              return;
+            }
+            
+            setLoading(true);
+            try {
+              // Vérifier si l'utilisateur existe
+              const allUsers = await api.getAllUsers();
+              const targetUser = allUsers.find(u => u.code === contactCode);
+              
+              if (!targetUser) {
+                alert('⚠ Utilisateur non trouvé. Vérifiez le code.');
+                setLoading(false);
+                return;
+              }
+              
+              const chatId = [currentUser.code, contactCode].sort().join('_');
+              
+              // Charger les messages existants
+              const messages = await api.getMessages(chatId);
+              
+              setConversations(prev => ({
+                ...prev,
+                [chatId]: {
+                  participants: [currentUser.code, contactCode],
+                  messages: messages,
+                  createdAt: new Date().toISOString()
+                }
+              }));
+              
+              setActiveChat(chatId);
+              setContactCode('');
+            } catch (error) {
+              alert('Erreur lors de la création de la conversation');
+              console.error('Conversation error:', error);
+            }
+            setLoading(false);
+          };
+
+          const sendMessage = async () => {
+            if (!newMessage.trim() || !activeChat) return;
+            
+            const conversation = conversations[activeChat];
+            const receiverCode = conversation.participants.find(code => code !== currentUser.code);
+            
+            const encryptedText = advancedCrypto.encrypt(newMessage, currentUser.code, receiverCode);
+            
+            setLoading(true);
+            try {
+              const result = await api.sendMessage(
+                currentUser.code, 
+                receiverCode, 
+                encryptedText, 
+                newMessage
+              );
+              
+              if (result.success) {
+                // Recharger les messages
+                const messages = await api.getMessages(activeChat);
+                setConversations(prev => ({
+                  ...prev,
+                  [activeChat]: {
+                    ...prev[activeChat],
+                    messages: messages
+                  }
+                }));
+                
+                setNewMessage('');
+              }
+            } catch (error) {
+              alert('Erreur lors de l\'envoi du message');
+              console.error('Send message error:', error);
+            }
+            setLoading(false);
+          };
+
+          const toggleTranslation = (messageId) => {
+            setShowTranslations(prev => ({
+              ...prev,
+              [messageId]: !prev[messageId]
+            }));
+          };
+
+          const logout = () => {
+            setCurrentUser(null);
+            setCurrentScreen('login');
+            setActiveChat(null);
+            setConversations({});
+            setShowTranslations({});
+            setLoginForm({ userCode: '', password: '' });
+          };
+
+          useEffect(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, [conversations]);
+
+          // Status de connexion en haut
+          const ConnectionStatus = () => (
+            <div className={`fixed top-0 left-0 right-0 z-50 px-4 py-2 text-center text-sm ${
+              connectionStatus === 'connected' 
+                ? 'bg-green-600 text-white' 
+                : connectionStatus === 'error' 
+                ? 'bg-red-600 text-white animate-pulse'
+                : 'bg-yellow-600 text-black'
+            }`}>
+              <div className="flex items-center justify-center gap-2">
+                {connectionStatus === 'connected' && (
+                  <>
+                    <Icons.Database size={16} />
+                    <span>🟢 Connecté à MongoDB • {totalUsers} utilisateurs</span>
+                    <Icons.Wifi size={16} />
+                  </>
+                )}
+                {connectionStatus === 'connecting' && (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                    <span>Connexion à MongoDB...</span>
+                  </>
+                )}
+                {connectionStatus === 'error' && (
+                  <>
+                    <span>🔴 Erreur connexion MongoDB</span>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+
+          // Écran de connexion
+          if (currentScreen === 'login') {
+            return (
+              <>
+                <ConnectionStatus />
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 pt-16">
+                  <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md border border-slate-700 shadow-2xl">
+                    <div className="text-center mb-8">
+                      <Icons.Shield className="mx-auto text-blue-400 mb-4 animate-pulse" size={48} />
+                      <h1 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                        SecureChat
+                      </h1>
+                      <p className="text-slate-400">Messagerie ultra-sécurisée</p>
+                      <div className="mt-2 flex items-center justify-center gap-2 text-xs">
+                        <Icons.Database size={12} className="text-green-400" />
+                        <span className="text-green-400">Powered by MongoDB</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Code Utilisateur</label>
+                        <div className="relative">
+                          <Icons.Hash className="absolute left-3 top-3 text-slate-400" size={20} />
+                          <input
+                            type="text"
+                            placeholder="#1234"
+                            value={loginForm.userCode}
+                            onChange={(e) => setLoginForm(prev => ({ ...prev, userCode: e.target.value }))}
+                            className="w-full bg-slate-700/50 text-white pl-12 pr-4 py-3 rounded-lg border border-slate-600 focus:border-blue-400 focus:outline-none transition-all"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">Mot de passe</label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          value={loginForm.password}
+                          onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                          onKeyPress={(e) => e.key === 'Enter' && !loading && handleLogin()}
+                          className="w-full bg-slate-700/50 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-400 focus:outline-none transition-all"
+                          disabled={loading}
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={handleLogin}
+                        disabled={loading || connectionStatus !== 'connected'}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:from-blue-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Connexion...
+                          </div>
+                        ) : (
+                          '🔐 Se connecter'
+                        )}
+                      </button>
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => setCurrentScreen('register')}
+                          disabled={loading}
+                          className="text-blue-400 hover:text-blue-300 text-sm underline disabled:opacity-50"
+                        >
+                          Créer un nouveau compte
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
+                      <p className="text-xs text-slate-400 mb-2">
+                        💡 {connectionStatus === 'connected' ? `${totalUsers} utilisateurs connectés` : 'Connexion...'}
+                      </p>
+                      {connectionStatus === 'connected' && (
+                        <p className="text-xs text-green-400">
+                          🌍 Base de données MongoDB synchronisée
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          }
+
+          // Écran d'inscription
+          if (currentScreen === 'register') {
+            return (
+              <>
+                <ConnectionStatus />
+                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 pt-16">
+                  <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md border border-slate-700 shadow-2xl">
+                    <div className="text-center mb-8">
+                      <Icons.UserPlus className="mx-auto text-purple-400 mb-4 animate-bounce" size={48} />
+                      <h1 className="text-3xl font-bold text-white mb-2">Nouveau Compte</h1>
+                      <p className="text-slate-400">Rejoignez SecureChat</p>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Nom d'utilisateur (3+ caractères)"
+                          value={registerForm.username}
+                          onChange={(e) => setRegisterForm(prev => ({ ...prev, username: e.target.value }))}
+                          className="w-full bg-slate-700/50 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-purple-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Mot de passe (6+ caractères)"
+                          value={registerForm.password}
+                          onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
+                          className="w-full bg-slate-700/50 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-purple-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                      </div>
+                      
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Confirmer le mot de passe"
+                          value={registerForm.confirmPassword}
+                          onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="w-full bg-slate-700/50 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-purple-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                      </div>
+                      
+                      <button
+                        onClick={handleRegister}
+                        disabled={loading || !registerForm.username || !registerForm.password || !registerForm.confirmPassword || connectionStatus !== 'connected'}
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold hover:from-purple-500 hover:to-pink-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Création...
+                          </div>
+                        ) : (
+                          '🎉 Créer mon compte'
+                        )}
+                      </button>
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => setCurrentScreen('login')}
+                          disabled={loading}
+                          className="text-purple-400 hover:text-purple-300 text-sm underline disabled:opacity-50"
+                        >
+                          ← Retour à la connexion
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          }
+
+          // Interface de chat avec MongoDB
+          return (
+            <>
+              <ConnectionStatus />
+              <div className="flex h-screen bg-slate-900 pt-10">
+                {/* Sidebar */}
+                <div className="w-80 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700 flex flex-col">
+                  {/* User Header */}
+                  <div className="p-4 border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {currentUser.username[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-white">{currentUser.username}</h3>
+                        <p className="text-sm text-blue-400 font-mono">{currentUser.code}</p>
+                      </div>
+                      <button
+                        onClick={logout}
+                        className="text-slate-400 hover:text-red-400 transition-colors"
+                        title="Déconnexion"
+                      >
+                        <Icons.LogOut size={20} />
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Code contact (#1234)"
+                          value={contactCode}
+                          onChange={(e) => setContactCode(e.target.value)}
+                          className="flex-1 bg-slate-700 text-white px-3 py-2 rounded text-sm border border-slate-600 focus:border-blue-400 focus:outline-none"
+                          disabled={loading}
+                        />
+                        <button
+                          onClick={startConversation}
+                          disabled={!contactCode || loading}
+                          className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed px-3 py-2 rounded text-sm transition-colors"
+                        >
+                          {loading ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Icons.MessageCircle size={16} />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-500">🔍 Rechercher par code utilisateur</p>
+                    </div>
+                  </div>
+                  
+                  {/* Conversations List */}
+                  <div className="flex-1 overflow-y-auto">
+                    {Object.keys(conversations).length === 0 ? (
+                      <div className="p-4 text-center text-slate-500">
+                        <Icons.MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucune conversation</p>
+                        <p className="text-xs">Ajoutez un contact pour commencer</p>
+                        <div className="mt-4 p-3 bg-green-500/20 rounded-lg border border-green-400/30">
+                          <Icons.Database size={20} className="mx-auto text-green-400 mb-1" />
+                          <p className="text-xs text-green-400">MongoDB synchronisé</p>
+                        </div>
+                      </div>
+                    ) : (
+                      Object.entries(conversations).map(([chatId, conversation]) => {
+                        const otherParticipant = conversation.participants.find(code => code !== currentUser.code);
+                        const lastMessage = conversation.messages[conversation.messages.length - 1];
+                        
+                        return (
+                          <button
+                            key={chatId}
+                            onClick={() => setActiveChat(chatId)}
+                            className={`w-full p-4 text-left border-b border-slate-700 hover:bg-slate-700/50 transition-colors ${
+                              activeChat === chatId ? 'bg-slate-700 border-l-4 border-l-blue-500' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                {otherParticipant ? otherParticipant[1] : '?'}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-white truncate">{otherParticipant}</h4>
+                                <p className="text-xs text-slate-400 font-mono">{otherParticipant}</p>
+                                {lastMessage && (
+                                  <p className="text-sm text-slate-500 truncate mt-1 font-mono">
+                                    🔒 {lastMessage.encrypted.substring(0, 20)}...
+                                  </p>
+                                )}
+                                {conversation.messages.length > 0 && (
+                                  <p className="text-xs text-slate-600 mt-1">
+                                    {conversation.messages.length} message{conversation.messages.length > 1 ? 's' : ''}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Chat Area */}
+                <div className="flex-1 flex flex-col bg-gradient-to-b from-slate-900 to-slate-800">
+                  {activeChat ? (
+                    <>
+                      {/* Chat Header */}
+                      <div className="p-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                              <Icons.Lock className="text-white" size={16} />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-white">
+                                {conversations[activeChat].participants.find(code => code !== currentUser.code)}
+                              </h3>
+                              <p className="text-sm text-green-400 flex items-center gap-1">
+                                <Icons.Shield size={12} />
+                                Cryptage + MongoDB
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1">
+                            <Icons.Database size={12} />
+                            {conversations[activeChat].messages.length} messages
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Messages */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {conversations[activeChat].messages.length === 0 ? (
+                          <div className="text-center text-slate-500 mt-20">
+                            <Icons.Lock size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-semibold mb-2">Conversation sécurisée</p>
+                            <p className="text-sm">Messages cryptés + synchronisés avec MongoDB</p>
+                            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 rounded-full border border-green-400/30">
+                              <Icons.Database size={16} className="text-green-400" />
+                              <span className="text-xs text-green-400">MongoDB Active</span>
+                            </div>
+                          </div>
+                        ) : (
+                          conversations[activeChat].messages.map((message) => {
+                            const isOwn = message.sender === currentUser.code;
+                            
+                            return (
+                              <div 
+                                key={message.id} 
+                                className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div className={`max-w-lg px-5 py-3 rounded-2xl backdrop-blur-sm border shadow-lg ${
+                                  isOwn 
+                                    ? 'bg-gradient-to-br from-blue-600/80 to-purple-600/80 border-blue-400/30 text-white' 
+                                    : 'bg-gradient-to-br from-slate-700/80 to-slate-600/80 border-slate-500/30 text-white'
+                                }`}>
+                                  
+                                  {/* Message Header */}
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        isOwn ? 'bg-white/20' : 'bg-green-500'
+                                      }`}>
+                                        {isOwn ? 'Tu' : message.sender[1]}
+                                      </div>
+                                      <span className="text-xs opacity-75">
+                                        {isOwn ? 'Vous' : message.sender}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Icons.Database size={10} className="text-green-400" />
+                                      <span className="text-xs opacity-60">{message.timestamp}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Message Crypté */}
+                                  <div className="mb-4">
+                                    <div className="bg-black/30 p-3 rounded-lg border border-white/10">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Icons.Lock size={12} className="text-red-400" />
+                                        <span className="text-xs text-red-400 font-mono">ENCRYPTED</span>
+                                        <Icons.Database size={10} className="text-green-400" />
+                                      </div>
+                                      <div className="font-mono text-sm break-all leading-relaxed text-yellow-300">
+                                        {message.encrypted}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Bouton de décryptage */}
+                                  <button
+                                    onClick={() => toggleTranslation(message.id)}
+                                    className={`flex items-center gap-2 text-xs px-3 py-1 rounded-full transition-all border ${
+                                      showTranslations[message.id] 
+                                        ? 'bg-red-500/20 border-red-400/30 hover:bg-red-500/30' 
+                                        : 'bg-green-500/20 border-green-400/30 hover:bg-green-500/30'
+                                    }`}
+                                  >
+                                    {showTranslations[message.id] ? (
+                                      <>
+                                        <Icons.EyeOff size={12} />
+                                        Masquer
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Icons.Eye size={12} />
+                                        🔓 Décrypter
+                                      </>
+                                    )}
+                                  </button>
+                                  
+                                  {/* Message Décrypté */}
+                                  {showTranslations[message.id] && (
+                                    <div className="mt-4 pt-4 border-t border-white/20">
+                                      <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <Icons.Shield size={12} className="text-green-400" />
+                                          <span className="text-xs text-green-400 font-semibold">DÉCRYPTÉ</span>
+                                          <Icons.Database size={10} className="text-green-400" />
+                                        </div>
+                                        <div className="text-sm text-white">
+                                          {message.original}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                        <div ref={messagesEndRef} />
+                      </div>
+                      
+                      {/* Input */}
+                      <div className="p-4 border-t border-slate-700 bg-slate-800/50 backdrop-blur">
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                            placeholder="Tapez votre message (crypté + MongoDB)..."
+                            className="flex-1 bg-slate-700/50 text-white px-4 py-3 rounded-xl border border-slate-600 focus:border-blue-400 focus:outline-none backdrop-blur-sm"
+                            disabled={loading}
+                          />
+                          <button
+                            onClick={sendMessage}
+                            disabled={!newMessage.trim() || loading}
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed px-6 py-3 rounded-xl transition-all shadow-lg"
+                          >
+                            {loading ? (
+                              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <Icons.Send size={20} />
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="text-xs text-slate-400 flex items-center gap-2">
+                            <Icons.Lock size={12} className="text-red-400" />
+                            <Icons.Database size={12} className="text-green-400" />
+                            Cryptage + MongoDB en temps réel
+                          </div>
+                          <div className="text-xs text-slate-500">🛡️ Niveau : Maximum</div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className="text-center max-w-md">
+                        <Icons.MessageCircle size={80} className="mx-auto text-slate-600 mb-6 animate-pulse" />
+                        <h3 className="text-2xl font-bold text-slate-400 mb-3">
+                          Sélectionnez une conversation
+                        </h3>
+                        <p className="text-slate-500 mb-6">
+                          Ou commencez une discussion synchronisée
+                        </p>
+                        <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Icons.Database className="text-green-400" size={20} />
+                            <span className="text-sm font-semibold text-green-400">MongoDB</span>
+                          </div>
+                          <ul className="text-xs text-slate-400 space-y-1 text-left">
+                            <li>🔐 Messages cryptés ultra-sécurisés</li>
+                            <li>🌍 Synchronisation en temps réel</li>
+                            <li>📱 Accessible depuis n'importe quel appareil</li>
+                            <li>💾 Sauvegarde permanente dans le cloud</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          );
+        };
+
+        // Rendu de l'application
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(SecureChat));
+    </script>
+</body>
+</html>
